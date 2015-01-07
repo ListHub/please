@@ -2,17 +2,25 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 
-	"github.com/zenazn/goji"
-	"github.com/zenazn/goji/web"
+	"github.com/listhub/please/api"
+	"github.com/listhub/please/persistence/etcd"
+	"github.com/listhub/please/please"
+	"github.com/robfig/cron"
 )
 
-func hello(c web.C, w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, %s!", c.URLParams["name"])
+func main() {
+
+	c := cron.New()
+	c.AddFunc("5 * * * * *", func() { fmt.Println("Every five minutes") })
+	c.Start()
+
+	api.ServeAPI(LoadConfig())
 }
 
-func main() {
-	goji.Get("/hello/:name", hello)
-	goji.Serve()
+// LoadConfig loads the config from the enviroment
+func LoadConfig() *please.Config {
+	return &please.Config{
+		Persistence: etcd.New(),
+	}
 }
