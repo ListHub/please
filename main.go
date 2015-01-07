@@ -1,17 +1,13 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/listhub/please/api"
-	"github.com/robfig/cron"
+	"github.com/listhub/please/cron"
 )
 
 func main() {
 
-	c := cron.New()
-	c.AddFunc("5 * * * * *", func() { fmt.Println("Every five minutes") })
-	c.Start()
+	cron.StartCron()
 
 	api.ServeAPI()
 }
