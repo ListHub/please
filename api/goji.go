@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/listhub/please/api/v1/jobs"
+	"github.com/listhub/please/api/v1/status"
 	"github.com/zenazn/goji"
 )
 
@@ -11,6 +12,7 @@ func ServeAPI() {
 	goji.Post("/api/v1/jobs", jobs.NewJob)
 	goji.Delete("/api/v1/jobs/:job_name", jobs.DeleteJob)
 	goji.Get("/api/v1/jobs/:job_name", jobs.GetJob)
+	goji.Get("/api/v1/status", status.GetStatus)
 
 	goji.Serve()
 }
