@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 
@@ -18,12 +19,14 @@ func GetJobs(c web.C, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Unable to pull jobs from persistence layer: %s", err.Error())
+		log.Printf("Unable to pull jobs from persistence layer: %s\n", err.Error())
 	}
 
 	daters, err := json.Marshal(jobs)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Unable to marshal jobs to json: %s", err.Error())
+		log.Printf("Unable to marshal jobs to json: %s\n", err.Error())
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -37,12 +40,13 @@ func NewJob(c web.C, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "Unable to read request body: %s", err.Error())
+		log.Printf("Unable to read request body: %s\n", err.Error())
 		return
 	}
 	err = json.Unmarshal(daters, &job)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "Unable to parse job: %s", err.Error())
+		fmt.Printf("Unable to parse job: %s\n", err.Error())
 		return
 	}
 
@@ -51,12 +55,13 @@ func NewJob(c web.C, w http.ResponseWriter, r *http.Request) {
 	err = persistence.Get().AddJob(*job)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("unable to persist job: %s\n", err.Error())
 		fmt.Fprintf(w, "unable to persist job: %s", err.Error())
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintf(w, "sucessfully added job: \n %s", job.ToString())
+	log.Printf("sucessfully added job: %s\n", job.ToString())
 }
 
 // DeleteJob ...
@@ -64,7 +69,8 @@ func DeleteJob(c web.C, w http.ResponseWriter, r *http.Request) {
 	err := persistence.Get().DeleteJob(c.URLParams["job_name"])
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "unable to persist job: %s", err.Error())
+		fmt.Fprintf(w, "unable to delete job: %s", err.Error())
+		log.Printf("unable to delete job: %s\n", err.Error())
 	}
 	w.WriteHeader(http.StatusOK)
 }
