@@ -3,8 +3,8 @@ package etcd
 import (
 	"encoding/json"
 
+	"github.com/ListHub/please/model"
 	"github.com/coreos/go-etcd/etcd"
-	"github.com/listhub/please/please"
 )
 
 type persistence struct {
@@ -20,7 +20,7 @@ func getEtcdClient() *etcd.Client {
 }
 
 // AddJob ...
-func (p *persistence) AddJob(job please.JobDef) error {
+func (p *persistence) AddJob(job model.JobDef) error {
 	client := getEtcdClient()
 	//TODO: Make sure the job doesn't already exist
 	//TODO: Make sure the job name is a valid etcd name
@@ -42,16 +42,16 @@ func (p *persistence) DeleteJob(jobName string) error {
 }
 
 // GetJobs ...
-func (p *persistence) GetJobs() ([]please.JobDef, error) {
+func (p *persistence) GetJobs() ([]model.JobDef, error) {
 	client := getEtcdClient()
 	resp, err := client.Get("/please/jobs/", false, true)
 	if err != nil {
-		return []please.JobDef{}, err
+		return []model.JobDef{}, err
 	}
 
-	jobs := []please.JobDef{}
+	jobs := []model.JobDef{}
 	for i := 0; i < len(resp.Node.Nodes); i++ {
-		job := new(please.JobDef)
+		job := new(model.JobDef)
 		err = json.Unmarshal([]byte(resp.Node.Nodes[i].Value), &job)
 		if err != nil {
 			return jobs, err
@@ -63,19 +63,19 @@ func (p *persistence) GetJobs() ([]please.JobDef, error) {
 }
 
 // GetJob ..
-func (p *persistence) GetJob(jobName string) (please.JobDef, error) {
+func (p *persistence) GetJob(jobName string) (model.JobDef, error) {
 	client := getEtcdClient()
 	resp, err := client.Get("/please/jobs/"+jobName, false, true)
 	if err != nil {
-		return please.JobDef{}, err
+		return model.JobDef{}, err
 	}
 
-	job := new(please.JobDef)
+	job := new(model.JobDef)
 	err = json.Unmarshal([]byte(resp.Node.Value), &job)
 	return *job, err
 }
 
 // New creates an instance of persistence
-func New() please.Persistence {
+func New() model.Persistence {
 	return new(persistence)
 }

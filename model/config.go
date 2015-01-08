@@ -1,4 +1,4 @@
-package please
+package model
 
 // Config ...
 type Config struct {

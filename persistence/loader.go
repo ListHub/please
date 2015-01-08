@@ -1,11 +1,11 @@
 package persistence
 
 import (
-	"github.com/listhub/please/persistence/etcd"
-	"github.com/listhub/please/please"
+	"github.com/ListHub/please/model"
+	"github.com/ListHub/please/persistence/etcd"
 )
 
 // Load persistence from the environment config
-func Load() please.Persistence {
+func Load() model.Persistence {
 	return etcd.New()
 }

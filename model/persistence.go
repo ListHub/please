@@ -1,4 +1,4 @@
-package please
+package model
 
 // Persistence is a wrapper for modules used to store job information
 type Persistence interface {

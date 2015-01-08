@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/listhub/please/persistence"
-	"github.com/listhub/please/please"
+	"github.com/ListHub/please/model"
+	"github.com/ListHub/please/persistence"
 	"github.com/zenazn/goji/web"
 )
 
@@ -32,7 +32,7 @@ func GetJobs(c web.C, w http.ResponseWriter, r *http.Request) {
 
 // NewJob ...
 func NewJob(c web.C, w http.ResponseWriter, r *http.Request) {
-	job := new(please.JobDef)
+	job := new(model.JobDef)
 	daters, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
