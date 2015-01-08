@@ -3,8 +3,8 @@ package etcd
 import (
 	"encoding/json"
 
-	"github.com/ListHub/please/model"
 	"github.com/coreos/go-etcd/etcd"
+	"github.com/listhub/please/model"
 )
 
 type persistence struct {

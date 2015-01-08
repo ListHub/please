@@ -2,9 +2,10 @@ package cron
 
 import (
 	"fmt"
+	"log"
 
+	"github.com/listhub/please/model"
 	"github.com/listhub/please/persistence"
-	"github.com/listhub/please/please"
 	"github.com/listhub/please/scheduler"
 	"github.com/robfig/cron"
 )
@@ -18,7 +19,7 @@ func StartCron() {
 }
 
 func loadExistingJobs(c *cron.Cron) {
-	jobs, err := persistence.Load().GetJobs()
+	jobs, err := persistence.Get().GetJobs()
 	if err != nil {
 		panic("Unable to load jobs from persistence layer")
 	}
@@ -31,9 +32,9 @@ func loadExistingJobs(c *cron.Cron) {
 	}
 }
 
-func getRunJobFn(job please.JobDef) func() {
+func getRunJobFn(job model.JobDef) func() {
 	return func() {
-		fmt.Printf("scheduling job: %s\n", job.Name)
-		scheduler.Load().ScheduleJob(job)
+		log.Printf("scheduling job: %s\n", job.Name)
+		scheduler.Get().ScheduleJob(job)
 	}
 }

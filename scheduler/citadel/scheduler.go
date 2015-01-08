@@ -7,19 +7,19 @@ import (
 
 	"github.com/citadel/citadel"
 	"github.com/citadel/citadel/cluster"
-	"github.com/citadel/citadel/scheduler"
 
 	"github.com/coreos/go-etcd/etcd"
+	"github.com/listhub/please/model"
 )
 
 type scheduler struct{}
 
-func (s *scheduler) ScheduleJob(job please.JobDef) error {
+func (s *scheduler) ScheduleJob(job model.JobDef) error {
 	return nil
 }
 
 // New creates an instance of scheduler
-func New() please.Scheduler {
+func New() model.Scheduler {
 	return new(scheduler)
 }
 

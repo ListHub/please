@@ -1,11 +1,16 @@
 package persistence
 
 import (
-	"github.com/ListHub/please/model"
-	"github.com/ListHub/please/persistence/etcd"
+	"github.com/listhub/please/model"
+	"github.com/listhub/please/persistence/etcd"
 )
 
-// Load persistence from the environment config
-func Load() model.Persistence {
-	return etcd.New()
+var persistence model.Persistence
+
+// Get persistence from the environment config
+func Get() model.Persistence {
+	if persistence == nil {
+		persistence = etcd.New()
+	}
+	return persistence
 }

@@ -7,14 +7,14 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ListHub/please/model"
-	"github.com/ListHub/please/persistence"
+	"github.com/listhub/please/model"
+	"github.com/listhub/please/persistence"
 	"github.com/zenazn/goji/web"
 )
 
 // GetJobs ...
 func GetJobs(c web.C, w http.ResponseWriter, r *http.Request) {
-	jobs, err := persistence.Load().GetJobs()
+	jobs, err := persistence.Get().GetJobs()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Unable to pull jobs from persistence layer: %s", err.Error())
@@ -48,7 +48,7 @@ func NewJob(c web.C, w http.ResponseWriter, r *http.Request) {
 
 	//TODO: Validate job contents
 
-	err = persistence.Load().AddJob(*job)
+	err = persistence.Get().AddJob(*job)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "unable to persist job: %s", err.Error())
@@ -61,7 +61,7 @@ func NewJob(c web.C, w http.ResponseWriter, r *http.Request) {
 
 // DeleteJob ...
 func DeleteJob(c web.C, w http.ResponseWriter, r *http.Request) {
-	err := persistence.Load().DeleteJob(c.URLParams["job_name"])
+	err := persistence.Get().DeleteJob(c.URLParams["job_name"])
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "unable to persist job: %s", err.Error())
@@ -72,7 +72,7 @@ func DeleteJob(c web.C, w http.ResponseWriter, r *http.Request) {
 // GetJob ...
 func GetJob(c web.C, w http.ResponseWriter, r *http.Request) {
 	jobName := c.URLParams["job_name"]
-	job, err := persistence.Load().GetJob(jobName)
+	job, err := persistence.Get().GetJob(jobName)
 	if err != nil {
 		if strings.Contains(err.Error(), "Key not found") {
 			w.WriteHeader(http.StatusNotFound)
