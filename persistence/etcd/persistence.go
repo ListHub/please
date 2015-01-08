@@ -96,7 +96,9 @@ func (p *persistence) setupWatch() {
 				"\tnode.key: '%s'\n"+
 				"\tnode.value: '%s'\n", resp.Action, resp.Node.Key, resp.Node.Value)
 
-			p.reloadJobsHandler()
+			if p.reloadJobsHandler != nil {
+				p.reloadJobsHandler()
+			}
 		}
 	}()
 	go p.etcdClient.Watch("/please/jobs/", 0, true, respChan, nil)
