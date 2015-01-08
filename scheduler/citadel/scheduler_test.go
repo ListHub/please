@@ -11,8 +11,8 @@ func TestCitadel(t *testing.T) {
 
 	job := model.JobDef{
 		Name:    "Test",
-		Image:   "busybox",
-		Command: "sleep 1000",
+		Image:   "ubuntu",
+		Command: "echo ooooh",
 		Ports:   []string{"9999:9876"},
 	}
 
