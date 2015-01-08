@@ -90,16 +90,15 @@ func (p *persistence) setupWatch() {
 	go func() {
 		for {
 			resp := <-respChan
-			logAction := "nil"
-			if resp != nil {
-				logAction = resp.Action
+			if resp == nil {
+				continue
 			}
 			logKey := "nil"
-			if resp != nil && resp.Node != nil {
+			if resp.Node != nil {
 				logKey = resp.Node.Key
 			}
 			log.Printf("New thing on the watch: action: '%s', node.key: '%s'\n",
-				logAction, logKey)
+				resp.Action, logKey)
 
 			if p.reloadJobsHandler != nil {
 				p.reloadJobsHandler()
