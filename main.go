@@ -7,7 +7,7 @@ import (
 
 func main() {
 
-	cron.StartCron()
+	cron.Start()
 
 	api.ServeAPI()
 }

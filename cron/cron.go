@@ -9,24 +9,44 @@ import (
 	"github.com/robfig/cron"
 )
 
+// cronic is a wrapper for cron system
+type cronic struct {
+	currentCron *cron.Cron
+}
+
+var cronicSingleton *cronic
+
+func cronicInstance() *cronic {
+	if cronicSingleton == nil {
+		cronicSingleton = new(cronic)
+	}
+	return cronicSingleton
+}
+
+// Start runing inside the singleton
+func Start() {
+	cronicInstance().StartCron()
+}
+
 // StartCron will populate the cron system with entries from the persistence
 // layer and then start it up
-func StartCron() {
-	persistence.Get().SetNewJobEventHandler(newJobHandler)
-	persistence.Get().SetDeleteJobEventHandler(deleteJobHandler)
+func (cronic *cronic) StartCron() {
+	persistence.Get().SetReloadJobsHandler(cronic.reloadJobsHandler)
 
-	c := cron.New()
-	loadExistingJobs(c)
-	c.Start()
+	cronic.currentCron = cron.New()
+	loadExistingJobs(cronic.currentCron)
+	cronic.currentCron.Start()
 }
 
-func newJobHandler(job model.JobDef) error {
-	log.Printf("Adding job %s", job.Name)
-	return nil
-}
+func (cronic *cronic) reloadJobsHandler() error {
+	log.Printf("reloading jobs")
+	nextCron := cron.New()
+	loadExistingJobs(nextCron)
 
-func deleteJobHandler(jobName string) error {
-	log.Printf("Deleting job %s", jobName)
+	nextCron.Start()
+	cronic.currentCron.Stop()
+	cronic.currentCron = nextCron
+
 	return nil
 }
 

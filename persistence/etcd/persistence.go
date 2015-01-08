@@ -11,9 +11,8 @@ import (
 )
 
 type persistence struct {
-	newJobHandler    model.NewJobEventHandler
-	deleteJobHandler model.DeleteJobEventHandler
-	etcdClient       *etcd.Client
+	reloadJobsHandler model.ReloadJobsHandler
+	etcdClient        *etcd.Client
 }
 
 func newClient() *etcd.Client {
@@ -80,13 +79,8 @@ func (p *persistence) GetJob(jobName string) (model.JobDef, error) {
 	return *job, err
 }
 
-func (p *persistence) SetNewJobEventHandler(handler model.NewJobEventHandler) error {
-	p.newJobHandler = handler
-	return nil
-}
-
-func (p *persistence) SetDeleteJobEventHandler(handler model.DeleteJobEventHandler) error {
-	p.deleteJobHandler = handler
+func (p *persistence) SetReloadJobsHandler(handler model.ReloadJobsHandler) error {
+	p.reloadJobsHandler = handler
 	return nil
 }
 
@@ -102,18 +96,7 @@ func (p *persistence) setupWatch() {
 				"\tnode.key: '%s'\n"+
 				"\tnode.value: '%s'\n", resp.Action, resp.Node.Key, resp.Node.Value)
 
-			if resp.Action == "set" && p.newJobHandler != nil {
-				job := new(model.JobDef)
-				err := json.Unmarshal([]byte(resp.Node.Value), &job)
-				if err != nil {
-					log.Printf("Unable to unmarshal job with key: %s\n", resp.Node.Key)
-				}
-				p.newJobHandler(*job)
-			}
-			if resp.Action == "delete" && p.deleteJobHandler != nil {
-				jobName := strings.Replace(resp.Node.Key, "/please/jobs/", "", 1)
-				p.deleteJobHandler(jobName)
-			}
+			p.reloadJobsHandler()
 		}
 	}()
 	go p.etcdClient.Watch("/please/jobs/", 0, true, respChan, nil)
