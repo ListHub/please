@@ -1,6 +1,7 @@
 package cron
 
 import (
+	"errors"
 	"log"
 
 	"github.com/listhub/please/model"
@@ -41,7 +42,11 @@ func (cronic *cronic) StartCron() {
 func (cronic *cronic) reloadJobsHandler() error {
 	log.Printf("reloading jobs")
 	nextCron := cron.New()
-	loadExistingJobs(nextCron)
+	err := loadExistingJobs(nextCron)
+	if err != nil {
+		log.Printf("Unable to reload jobs: " + err.Error())
+		return err
+	}
 
 	nextCron.Start()
 	cronic.currentCron.Stop()
@@ -50,10 +55,10 @@ func (cronic *cronic) reloadJobsHandler() error {
 	return nil
 }
 
-func loadExistingJobs(c *cron.Cron) {
+func loadExistingJobs(c *cron.Cron) error {
 	jobs, err := persistence.Get().GetJobs()
 	if err != nil {
-		panic("Unable to load jobs from persistence layer: " + err.Error())
+		return errors.New("Unable to load jobs from persistence layer: " + err.Error())
 	}
 	for i := 0; i < len(jobs); i++ {
 		job := jobs[i]
@@ -64,6 +69,7 @@ func loadExistingJobs(c *cron.Cron) {
 			log.Printf("Loaded job '%s' with schedule '%s'\n", job.Name, job.Schedule)
 		}
 	}
+	return nil
 }
 
 func getRunJobFn(job model.JobDef) func() {
