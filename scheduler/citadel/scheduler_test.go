@@ -3,10 +3,12 @@ package citadel
 import (
 	"github.com/listhub/please/model"
 	"log"
+	"os"
 	"testing"
 )
 
 func TestCitadel(t *testing.T) {
+	os.Chdir("../..")
 	cit := New()
 
 	job := model.JobDef{
