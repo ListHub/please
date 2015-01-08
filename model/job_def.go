@@ -3,6 +3,9 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+
+	"github.com/robfig/cron"
 )
 
 // JobDef defines information needed to launch and run a scheduled container
@@ -18,6 +21,29 @@ type JobDef struct {
 	OverrunPrevention bool              `json:"overrun-prevention"`
 }
 
+// Validate the jobDef
+func (job *JobDef) Validate() []string {
+
+	errorMsgs := []string{}
+	if len(job.Name) < 1 {
+		errorMsgs = append(errorMsgs, "Job must have a name")
+	}
+	if len(job.Image) < 1 {
+		errorMsgs = append(errorMsgs, "Job must have an image")
+	}
+	if job.Memory == 0 {
+		errorMsgs = append(errorMsgs, "Job must specifiy memory requirements in MB")
+	}
+	if job.CPU == 0 {
+		errorMsgs = append(errorMsgs, "Job must specify CPU requirements")
+	}
+	if !validateCronSpec(job.Schedule) {
+		errorMsgs = append(errorMsgs, "Job must have a valid cron string schedule")
+	}
+
+	return errorMsgs
+}
+
 // ToString herps the derp
 func (job *JobDef) ToString() string {
 	d, err := json.Marshal(&job)
@@ -25,4 +51,13 @@ func (job *JobDef) ToString() string {
 		return fmt.Sprintf("Error marshalling job: %s", err.Error())
 	}
 	return string(d)
+}
+
+func validateCronSpec(spec string) bool {
+	_, err := cron.Parse(spec)
+	if err != nil {
+		log.Printf("Failure to validate cronspec: %s\n", err.Error())
+		return false
+	}
+	return true
 }

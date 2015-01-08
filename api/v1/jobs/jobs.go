@@ -46,11 +46,18 @@ func NewJob(c web.C, w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(daters, &job)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Printf("Unable to parse job: %s\n", err.Error())
+		fmt.Fprintf(w, "Unable to parse job: %s", err.Error())
+		log.Printf("Unable to parse job: %s\n", err.Error())
 		return
 	}
 
-	//TODO: Validate job contents
+	errMsgs := job.Validate()
+	if len(errMsgs) > 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "Job failed validation: %s", errMsgs)
+		log.Printf("Unable to parse job: %s\n", errMsgs)
+		return
+	}
 
 	err = persistence.Get().AddJob(*job)
 	if err != nil {
