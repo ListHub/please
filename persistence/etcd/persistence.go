@@ -17,7 +17,7 @@ type persistence struct {
 
 func newClient() *etcd.Client {
 	return etcd.NewClient([]string{
-		"http://10.0.10.85:4001",
+		model.Config().PersistenceAddress,
 	})
 }
 
