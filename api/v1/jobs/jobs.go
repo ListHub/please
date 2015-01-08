@@ -69,12 +69,6 @@ func DeleteJob(c web.C, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// ReplaceJob ...
-func ReplaceJob(c web.C, w http.ResponseWriter, r *http.Request) {
-	DeleteJob(c, w, r)
-	NewJob(c, w, r)
-}
-
 // GetJob ...
 func GetJob(c web.C, w http.ResponseWriter, r *http.Request) {
 	jobName := c.URLParams["job_name"]
