@@ -2,7 +2,7 @@
   "image" : "busybox",
   "schedule" : "0 * * * * *",
   "name" : "sleep-10s-every-minute",
-  "memory": 1,
+  "memory": 4,
   "command" : "sleep 10",
   "cpu" : 0.1
 }
