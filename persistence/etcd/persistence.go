@@ -49,6 +49,9 @@ func (p *persistence) DeleteJob(jobName string) error {
 func (p *persistence) GetJobs() ([]model.JobDef, error) {
 	resp, err := p.etcdClient.Get("/please/jobs/", false, true)
 	if err != nil {
+		if strings.Contains(err.Error(), "Key not found (/please)") {
+			return []model.JobDef{}, nil
+		}
 		return []model.JobDef{}, err
 	}
 
