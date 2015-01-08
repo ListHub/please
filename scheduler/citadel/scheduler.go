@@ -1,6 +1,7 @@
 package citadel
 
 import (
+	"errors"
 	"log"
 	"strconv"
 	"strings"
@@ -14,77 +15,92 @@ import (
 	"github.com/listhub/please/persistence"
 )
 
-type sched struct{}
-
-var myCluster *cluster.Cluster
+type sched struct {
+	myCluster *cluster.Cluster
+}
 
 func (s *sched) ScheduleJob(job model.JobDef) error {
 
-	ports := []*citadel.Port{}
-	for _, element := range job.Ports {
-		log.Println(element)
-		strPort := strings.Split(element, ":")
-		toPort, _ := strconv.ParseInt(strPort[0], 10, 0)
-		fromPort, _ := strconv.ParseInt(strPort[1], 10, 0)
-		port := &citadel.Port{Port: int(fromPort), ContainerPort: int(toPort)}
-		ports = append(ports, port)
-	}
-
 	image := &citadel.Image{
-		Name:        job.Image,
-		Memory:      256,
-		Cpus:        0.4,
-		Type:        "service",
-		Environment: job.Environment,
-		BindPorts:   ports,
-		Args:        strings.Split(job.Command, " "),
+		ContainerName: job.Name,
+		Name:          job.Image,
+		Memory:        job.Memory,
+		Cpus:          job.CPU,
+		Type:          "service",
+		Environment:   job.Environment,
+		BindPorts:     parsePorts(job.Ports),
+		Args:          strings.Split(job.Command, " "),
 	}
 
-	container, err := myCluster.Start(image, true)
+	container, err := s.myCluster.Start(image, true)
 	if err != nil {
 		return err
 	}
 
 	log.Printf("ran container %s\n", container.ID)
 
-	myCluster.ListContainers(false, false, "")
+	return nil
+}
+
+func (s *sched) ListContainers() ([]model.ContainerInfo, error) {
+	return []model.ContainerInfo{}, nil
+}
+
+func (s *sched) init() error {
+	engines := engines()
+
+	var err error
+	s.myCluster, err = cluster.New(scheduler.NewResourceManager(), engines...)
+	if err != nil {
+		return errors.New("Unable to instantiate cluster: " + err.Error())
+	}
+
+	err = s.myCluster.RegisterScheduler("service", &scheduler.LabelScheduler{})
+	if err != nil {
+		return errors.New("Unable to register scheduler: " + err.Error())
+	}
+
+	err = s.myCluster.Events(s)
+	if err != nil {
+		return errors.New("Unable to register for events: " + err.Error())
+	}
 
 	return nil
 }
 
 // New creates an instance of scheduler
 func New() model.Scheduler {
-	engines := engines()
 
-	var err error
-	myCluster, err = cluster.New(scheduler.NewResourceManager(), engines...)
+	s := new(sched)
+	err := s.init()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error initializing scheduler: %ss", err.Error())
 	}
 
-	if err := myCluster.RegisterScheduler("service", &scheduler.LabelScheduler{}); err != nil {
-		log.Fatal(err)
-	}
-
-	if err := myCluster.Events(&logHandler{}); err != nil {
-		log.Fatal(err)
-	}
-
-	return new(sched)
+	return s
 }
 
-type logHandler struct {
-}
-
-func (l *logHandler) Handle(e *citadel.Event) error {
-	log.Printf("type: %s time: %s image: %s container: %s\n",
-		e.Type, e.Time.Format(time.RubyDate), e.Container.Image.Name, e.Container.ID)
+func (s *sched) Handle(e *citadel.Event) error {
+	log.Printf("citadel event - type: %s time: %s name: %s container: %s\n",
+		e.Type, e.Time.Format(time.RubyDate), e.Container.Name, e.Container.ID)
 
 	return nil
 }
 
-func list() {
-	log.Println(myCluster.ListContainers(true, true, ""))
+func (s *sched) list() {
+	log.Println(s.myCluster.ListContainers(true, true, ""))
+}
+
+func parsePorts(jobPorts []string) []*citadel.Port {
+	ports := []*citadel.Port{}
+	for _, element := range jobPorts {
+		strPort := strings.Split(element, ":")
+		toPort, _ := strconv.ParseInt(strPort[0], 10, 0)
+		fromPort, _ := strconv.ParseInt(strPort[1], 10, 0)
+		port := &citadel.Port{Port: int(fromPort), ContainerPort: int(toPort)}
+		ports = append(ports, port)
+	}
+	return ports
 }
 
 func engines() []*citadel.Engine {
@@ -92,7 +108,6 @@ func engines() []*citadel.Engine {
 	servers, _ := persistence.Get().GetServers()
 	for _, element := range servers {
 		address := strings.TrimSuffix(element, "4001") + "2375"
-		log.Println(address)
 		engine := &citadel.Engine{
 			ID:     address,
 			Addr:   address,
