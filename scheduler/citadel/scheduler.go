@@ -42,7 +42,7 @@ func (s *sched) ScheduleJob(job model.JobDef) error {
 
 	container, err := myCluster.Start(image, true)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	log.Printf("ran container %s\n", container.ID)

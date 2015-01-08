@@ -69,6 +69,9 @@ func loadExistingJobs(c *cron.Cron) {
 func getRunJobFn(job model.JobDef) func() {
 	return func() {
 		log.Printf("scheduling job: %s\n", job.Name)
-		scheduler.Get().ScheduleJob(job)
+		err := scheduler.Get().ScheduleJob(job)
+		if err != nil {
+			log.Printf("unexpected error when scheduling job: %s\n", err.Error())
+		}
 	}
 }
