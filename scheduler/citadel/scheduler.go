@@ -10,7 +10,6 @@ import (
 	"github.com/citadel/citadel/scheduler"
 
 	"github.com/coreos/go-etcd/etcd"
-	"github.com/listhub/please/please"
 )
 
 type scheduler struct{}
