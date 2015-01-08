@@ -31,10 +31,10 @@ func (job *JobDef) Validate() []string {
 	if len(job.Image) < 1 {
 		errorMsgs = append(errorMsgs, "Job must have an image")
 	}
-	if job.Memory == 0 {
-		errorMsgs = append(errorMsgs, "Job must specifiy memory requirements in MB")
+	if job.Memory < 4 {
+		errorMsgs = append(errorMsgs, "Minimum job memory is 4MB")
 	}
-	if job.CPU == 0 {
+	if job.CPU <= 0 {
 		errorMsgs = append(errorMsgs, "Job must specify CPU requirements")
 	}
 	if !validateCronSpec(job.Schedule) {
