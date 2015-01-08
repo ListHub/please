@@ -12,6 +12,4 @@ type Persistence interface {
 	GetJob(string) (JobDef, error)
 	SetReloadJobsHandler(ReloadJobsHandler) error
 	GetServers() ([]string, error)
-	SetNewJobEventHandler(NewJobEventHandler) error
-	SetDeleteJobEventHandler(DeleteJobEventHandler) error
 }
