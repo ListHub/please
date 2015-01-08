@@ -53,7 +53,7 @@ func (cronic *cronic) reloadJobsHandler() error {
 func loadExistingJobs(c *cron.Cron) {
 	jobs, err := persistence.Get().GetJobs()
 	if err != nil {
-		panic("Unable to load jobs from persistence layer")
+		panic("Unable to load jobs from persistence layer: " + err.Error())
 	}
 	for i := 0; i < len(jobs); i++ {
 		job := jobs[i]
