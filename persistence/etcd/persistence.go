@@ -96,10 +96,8 @@ func (p *persistence) setupWatch() {
 	go func() {
 		for {
 			resp := <-respChan
-			log.Printf("New thing on the watch: \n"+
-				"\taction: '%s'\n"+
-				"\tnode.key: '%s'\n"+
-				"\tnode.value: '%s'\n", resp.Action, resp.Node.Key, resp.Node.Value)
+			log.Printf("New thing on the watch: action: '%s', node.key: '%s'\n",
+				resp.Action, resp.Node.Key)
 
 			if p.reloadJobsHandler != nil {
 				p.reloadJobsHandler()
