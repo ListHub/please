@@ -1,0 +1,8 @@
+{
+  "image" : "busybox",
+  "schedule" : "0 */5 * * * *",
+  "name" : "sleep-4m-every-5-minutes",
+  "memory": 1,
+  "command" : "sleep 240",
+  "cpu" : 0.1
+}
