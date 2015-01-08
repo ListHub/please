@@ -2,7 +2,6 @@ package etcd
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"strings"
 
@@ -23,11 +22,6 @@ func newClient() *etcd.Client {
 
 // AddJob ...
 func (p *persistence) AddJob(job model.JobDef) error {
-	_, err := p.etcdClient.Get("/please/jobs/"+job.Name, false, false)
-	if err == nil || !strings.Contains(err.Error(), "Key not found") {
-		return errors.New("Job already exists")
-	}
-
 	//TODO: Make sure the job name is a valid etcd name
 	jobDaters, err := json.Marshal(job)
 	if err != nil {
@@ -96,8 +90,16 @@ func (p *persistence) setupWatch() {
 	go func() {
 		for {
 			resp := <-respChan
+			logAction := "nil"
+			if resp != nil {
+				logAction = resp.Action
+			}
+			logKey := "nil"
+			if resp != nil && resp.Node != nil {
+				logKey = resp.Node.Key
+			}
 			log.Printf("New thing on the watch: action: '%s', node.key: '%s'\n",
-				resp.Action, resp.Node.Key)
+				logAction, logKey)
 
 			if p.reloadJobsHandler != nil {
 				p.reloadJobsHandler()
