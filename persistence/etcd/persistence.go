@@ -17,9 +17,7 @@ type persistence struct {
 
 func newClient() *etcd.Client {
 	return etcd.NewClient([]string{
-		"http://10.0.10.144:4001",
-		"http://10.0.10.84:4001",
-		"http://10.0.10.248:4001",
+		"http://10.0.10.85:4001",
 	})
 }
 
@@ -82,6 +80,10 @@ func (p *persistence) GetJob(jobName string) (model.JobDef, error) {
 func (p *persistence) SetReloadJobsHandler(handler model.ReloadJobsHandler) error {
 	p.reloadJobsHandler = handler
 	return nil
+}
+
+func (p *persistence) GetServers() ([]string, error) {
+	return p.etcdClient.GetCluster(), nil
 }
 
 func (p *persistence) setupWatch() {
