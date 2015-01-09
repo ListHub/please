@@ -19,10 +19,14 @@ type sched struct {
 	myCluster *cluster.Cluster
 }
 
+func containerName(job model.JobDef) string {
+	return job.Name + "_" + time.Now().UTC().Format("2006-01-02T150405Z")
+}
+
 func (s *sched) ScheduleJob(job model.JobDef) error {
 
 	image := &citadel.Image{
-		ContainerName: job.Name,
+		ContainerName: containerName(job),
 		Name:          job.Image,
 		Memory:        job.Memory,
 		Cpus:          job.CPU,
@@ -37,7 +41,7 @@ func (s *sched) ScheduleJob(job model.JobDef) error {
 		return err
 	}
 
-	log.Printf("ran container %s\n", container.ID)
+	log.Printf("ran job %s in container %s\n", job.Name, container.ID)
 
 	return nil
 }
