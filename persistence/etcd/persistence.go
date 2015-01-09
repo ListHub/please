@@ -2,12 +2,18 @@ package etcd
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/coreos/go-etcd/etcd"
 	"github.com/listhub/please/model"
 )
+
+const historyTTL uint64 = 30 * 24 * 60 * 60
+const jobHistoryKey string = "/please/history/jobs/"
 
 type persistence struct {
 	reloadJobsHandler model.ReloadJobsHandler
@@ -81,6 +87,89 @@ func (p *persistence) SetReloadJobsHandler(handler model.ReloadJobsHandler) erro
 
 func (p *persistence) GetServers() ([]string, error) {
 	return p.etcdClient.GetCluster(), nil
+}
+
+func (p *persistence) LogContainerStart(jobName, containerID string, startTime time.Time) error {
+	containerKey := fmt.Sprintf("/please/history/containers/%s", containerID)
+	p.etcdClient.SetDir(containerKey, historyTTL)
+
+	timeStr := startTime.UTC().Format(time.RFC3339)
+	p.etcdClient.Set(containerKey+"/start", timeStr, 0)
+	p.etcdClient.Set(containerKey+"/job", jobName, 0)
+
+	jobKey := fmt.Sprintf("/please/history/jobs/%s/%s", jobName, timeStr)
+	p.etcdClient.SetDir(jobKey, historyTTL)
+	p.etcdClient.Set(jobKey+"/status", string(model.JobRunStatusActive), 0)
+	p.etcdClient.Set(jobKey+"/container-id", containerID, 0)
+
+	return nil
+}
+
+func (p *persistence) lookupStartTimeForContainer(containerID, containerKey string) (string, error) {
+	startTimeResp, err := p.etcdClient.Get(containerKey+"/start", false, false)
+	if err != nil || startTimeResp == nil || startTimeResp.Node == nil {
+		log.Printf("Unable to retrieve start time for "+
+			"container-id %s: %s", containerID, err.Error())
+		return "", err
+	}
+	return startTimeResp.Node.Value, nil
+}
+
+func (p *persistence) LogContainerFinish(jobName, containerID string, endTime time.Time) error {
+	containerKey := fmt.Sprintf("/please/history/containers/%s", containerID)
+	endTimeStr := endTime.UTC().Format(time.RFC3339)
+	p.etcdClient.Set(containerKey+"/finish", endTimeStr, 0)
+
+	startTimeStr, err := p.lookupStartTimeForContainer(containerID, containerKey)
+	if err != nil {
+		return err
+	}
+
+	jobKey := fmt.Sprintf("/please/history/jobs/%s/%s", jobName, startTimeStr)
+	p.etcdClient.Set(jobKey+"/status", string(model.JobRunStatusFinished), 0)
+	p.etcdClient.Set(jobKey+"/finish", endTimeStr, 0)
+
+	return nil
+}
+
+func (p *persistence) GetJobHistory(start, end time.Time) ([]model.JobRun, error) {
+	result := []model.JobRun{}
+	resp, err := p.etcdClient.Get(jobHistoryKey, false, true)
+	if err != nil || resp == nil || resp.Node == nil {
+		return result, errors.New("Unable to pull job history from etcd:" + err.Error())
+	}
+
+	for _, jobNode := range resp.Node.Nodes {
+		jobName := strings.Replace(jobNode.Key, jobHistoryKey, "", 1)
+
+		for _, runNode := range jobNode.Nodes {
+			jobRun := parseJobRun(runNode, jobName)
+			result = append(result, jobRun)
+		}
+	}
+
+	return result, nil
+}
+
+func parseJobRun(runNode *etcd.Node, jobName string) model.JobRun {
+	jobKey := jobHistoryKey + jobName + "/"
+	jobStartStr := strings.Replace(runNode.Key, jobKey, "", 1)
+
+	jobRun := model.JobRun{}
+	jobRun.JobName = jobName
+	jobRun.Start, _ = time.Parse(time.RFC3339, jobStartStr)
+	for _, runAttrNode := range runNode.Nodes {
+		if strings.HasSuffix(runAttrNode.Key, "status") {
+			jobRun.Status = model.JobRunStatus(runAttrNode.Value)
+		}
+		if strings.HasSuffix(runAttrNode.Key, "finish") {
+			jobRun.Finish, _ = time.Parse(time.RFC3339, runAttrNode.Value)
+		}
+		if strings.HasSuffix(runAttrNode.Key, "container-id") {
+			jobRun.ContainerID = runAttrNode.Value
+		}
+	}
+	return jobRun
 }
 
 func (p *persistence) setupWatch() {

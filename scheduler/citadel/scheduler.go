@@ -3,6 +3,7 @@ package citadel
 import (
 	"errors"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +22,11 @@ type sched struct {
 
 func containerName(job model.JobDef) string {
 	return job.Name + "_" + time.Now().UTC().Format("2006-01-02T150405Z")
+}
+
+func parseJobNameFromContainerName(containerName string) string {
+	re, _ := regexp.Compile("_[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{6}Z")
+	return strings.Replace(re.ReplaceAllString(containerName, ""), "/", "", 1)
 }
 
 func (s *sched) ScheduleJob(job model.JobDef) error {
@@ -44,10 +50,6 @@ func (s *sched) ScheduleJob(job model.JobDef) error {
 	log.Printf("ran job %s in container %s\n", job.Name, container.ID)
 
 	return nil
-}
-
-func (s *sched) ListContainers() ([]model.ContainerInfo, error) {
-	return []model.ContainerInfo{}, nil
 }
 
 func (s *sched) init() error {
@@ -85,8 +87,17 @@ func New() model.Scheduler {
 }
 
 func (s *sched) Handle(e *citadel.Event) error {
-	log.Printf("citadel event - type: %s time: %s name: %s container: %s\n",
-		e.Type, e.Time.Format(time.RubyDate), e.Container.Name, e.Container.ID)
+	jobName := parseJobNameFromContainerName(e.Container.Name)
+	if e.Type == "start" {
+		persistence.Get().LogContainerStart(jobName, e.Container.ID, e.Time)
+	}
+
+	if e.Type == "die" {
+		persistence.Get().LogContainerFinish(jobName, e.Container.ID, e.Time)
+	}
+
+	log.Printf("citadel event - job: %s type: %s time: %s name: %s container: %s\n",
+		jobName, e.Type, e.Time.Format(time.RubyDate), e.Container.Name, e.Container.ID)
 
 	return nil
 }

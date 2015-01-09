@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 // ReloadJobsHandler should be called whenver a job is added or removed
 type ReloadJobsHandler func() error
 
@@ -12,4 +14,7 @@ type Persistence interface {
 	GetJob(string) (JobDef, error)
 	SetReloadJobsHandler(ReloadJobsHandler) error
 	GetServers() ([]string, error)
+	LogContainerStart(jobName, containerID string, time time.Time) error
+	LogContainerFinish(jobName, containerID string, time time.Time) error
+	GetJobHistory(start, end time.Time) ([]JobRun, error)
 }
