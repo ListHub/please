@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"time"
 
@@ -86,7 +87,20 @@ func (p *persistence) SetReloadJobsHandler(handler model.ReloadJobsHandler) erro
 }
 
 func (p *persistence) GetServers() ([]string, error) {
-	return p.etcdClient.GetCluster(), nil
+	resp, err := p.etcdClient.Get("/_etcd/machines/", false, true)
+	if err != nil || resp == nil || resp.Node == nil {
+		log.Printf("Unable to get servers from etcd: %s", err.Error())
+		return []string{}, err
+	}
+	servers := []string{}
+	for _, node := range resp.Node.Nodes {
+		val, _ := url.QueryUnescape(node.Value)
+		etcdVal := strings.Split(val, "&")[0]
+		host := strings.Replace(etcdVal, "etcd=", "", 1)
+		servers = append(servers, host)
+		log.Printf("Registering machine %s", host)
+	}
+	return servers, nil
 }
 
 func (p *persistence) LogContainerStart(jobName, containerID string, startTime time.Time) error {
